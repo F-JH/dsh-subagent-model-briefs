@@ -13,7 +13,7 @@
  * recovery of every other unit continues; {@link recordedModelNotes} reports
  * it to the reading operation.
  *
- * @module dsh-team-model-routing/notes
+ * @module dsh-subagent-model-briefs/notes
  */
 
 import type { Volatile } from '@deepseek-ai/cordis'

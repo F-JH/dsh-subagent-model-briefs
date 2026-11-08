@@ -7,7 +7,7 @@
  * names a file the build did not write, or a declaration path with no file
  * behind it fails here instead of at a user's first `dsh` start.
  *
- * @module dsh-team-model-routing/build/verify
+ * @module dsh-subagent-model-briefs/build/verify
  */
 
 import { existsSync } from 'node:fs'
@@ -23,7 +23,7 @@ function projectFile(relative) {
 /**
  * Every path a package `exports`/`main` entry names must exist. The former
  * `types` entries pointed at `lib/types/**`, which this project never emits, so
- * an editor resolving `dsh-team-model-routing` got a broken reference.
+ * an editor resolving `dsh-subagent-model-briefs` got a broken reference.
  * @param manifest - parsed `package.json`.
  * @returns violations; empty when every declared target exists.
  */

@@ -19,7 +19,7 @@
  * - Sourcemaps. An inline map keeps the served script a single file, which is
  *   what `/plugins/<package>/client.js` must be.
  *
- * @module dsh-team-model-routing/build/client
+ * @module dsh-subagent-model-briefs/build/client
  */
 
 import { mkdir, writeFile } from 'node:fs/promises'

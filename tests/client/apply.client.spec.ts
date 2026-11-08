@@ -42,7 +42,7 @@ function declareDetailSection(slots: SlotRegistry): () => void {
   } as never, () => null)
 }
 
-describe('dsh-team-model-routing apply', () => {
+describe('dsh-subagent-model-briefs apply', () => {
   it('declares the services it uses', () => {
     expect(inject).toEqual(['slots', 'locale', 'configForms'])
   })

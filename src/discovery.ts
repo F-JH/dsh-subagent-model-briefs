@@ -8,7 +8,7 @@
  * official `provider`, `model`, and `reasoning_effort` parameters, and only
  * when the Agent's Session recorded a note snapshot.
  *
- * @module dsh-team-model-routing/discovery
+ * @module dsh-subagent-model-briefs/discovery
  */
 
 import type {} from '@deepseek-ai/dsh-agent'

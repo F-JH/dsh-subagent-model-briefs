@@ -9,7 +9,7 @@
  * stays with the official `subagent-model-selection-settings` service; a note
  * never allows a route.
  *
- * @module dsh-team-model-routing
+ * @module dsh-subagent-model-briefs
  */
 
 import type { Context } from '@deepseek-ai/cordis'

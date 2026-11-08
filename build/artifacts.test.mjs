@@ -8,7 +8,7 @@
  * the wrong id, requires a specifier the shell cannot answer, or throws on
  * materialization fails here rather than in a user's browser.
  *
- * @module dsh-team-model-routing/build/artifacts.test
+ * @module dsh-subagent-model-briefs/build/artifacts.test
  */
 
 import assert from 'node:assert/strict'

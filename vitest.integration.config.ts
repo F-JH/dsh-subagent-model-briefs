@@ -11,7 +11,7 @@
  * Point `DSH_SOURCE_ROOT` at the checkout root; nothing here guesses a parent
  * directory, because a standalone clone has none of these packages as siblings.
  *
- * @module dsh-team-model-routing/vitest.integration.config
+ * @module dsh-subagent-model-briefs/vitest.integration.config
  */
 
 import { existsSync, realpathSync } from 'node:fs'

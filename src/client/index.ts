@@ -54,15 +54,15 @@ export const inject = ['slots', 'locale', 'configForms']
  */
 export function apply(ctx: ClientContext): void {
   const t = ctx.locale.bind(NS)
-  ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-team-model-routing: dictionaries')
+  ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-subagent-model-briefs: dictionaries')
   const notes = new ModelNotesController(
     ctx.configForms.get<ModelNotesSettings>(MODEL_NOTES_ENTRY_ID),
     ctx.configForms.get<SubagentModelSelectionSettings>(SUBAGENT_MODEL_SELECTION_ENTRY_ID),
   )
-  ctx.effect(() => () => { notes.dispose() }, 'dsh-team-model-routing: form subscriptions')
+  ctx.effect(() => () => { notes.dispose() }, 'dsh-subagent-model-briefs: form subscriptions')
   ctx.effect(
     () => ctx.on('connection/reset', () => { notes.resetConnection() }),
-    'dsh-team-model-routing: connection generation',
+    'dsh-subagent-model-briefs: connection generation',
   )
   ctx.effect(() => ctx.configForms.whileServed([MODEL_NOTES_ENTRY_ID], () => ctx.slots.inject(
     'plugins.detail.section',
@@ -74,5 +74,5 @@ export function apply(ctx: ClientContext): void {
       locale: NS,
       inject: () => notes.inject(),
     }, ModelNotesSection),
-  )), 'dsh-team-model-routing: panel')
+  )), 'dsh-subagent-model-briefs: panel')
 }

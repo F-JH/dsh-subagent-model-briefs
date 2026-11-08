@@ -4,4 +4,4 @@
 # this module would register the service twice.
 - insert:
     - id: team-model-routing-settings
-      name: dsh-team-model-routing
+      name: dsh-subagent-model-briefs

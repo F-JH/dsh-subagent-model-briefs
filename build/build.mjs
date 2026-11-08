@@ -12,7 +12,7 @@
  * an approval request rather than running silently; the README's install
  * section owns the exact commands and the permission the approval grants.
  *
- * @module dsh-team-model-routing/build/build
+ * @module dsh-subagent-model-briefs/build/build
  */
 
 import { buildClient } from './client.mjs'

@@ -14,7 +14,7 @@
  * registers a factory, and the factory runs at materialization. React is
  * supplied from `node_modules`, so the component renders for real.
  *
- * @module dsh-team-model-routing/build/client-style.test
+ * @module dsh-subagent-model-briefs/build/client-style.test
  */
 
 import assert from 'node:assert/strict'

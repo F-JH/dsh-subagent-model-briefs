@@ -34,7 +34,7 @@
 # `subagentModelSelection` injection, not row order, must order the two
 # `agent/created` listeners.
 - id: team-model-routing-settings
-  name: dsh-team-model-routing
+  name: dsh-subagent-model-briefs
   config:
     modelNotes:
       - provider: alt

@@ -28,7 +28,7 @@
  * party that scopes names and making the map and the selectors agree by
  * construction.
  *
- * @module dsh-team-model-routing/build/css-modules
+ * @module dsh-subagent-model-briefs/build/css-modules
  */
 
 import { readFile } from 'node:fs/promises'

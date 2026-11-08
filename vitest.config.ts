@@ -24,7 +24,7 @@
  * checkout's store holds a second react that the renderer's `use-sync-external-store`
  * shim would otherwise require.
  *
- * @module dsh-team-model-routing/vitest.config
+ * @module dsh-subagent-model-briefs/vitest.config
  */
 
 import { existsSync, realpathSync } from 'node:fs'

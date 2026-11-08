@@ -7,7 +7,7 @@
  * `/…/my%20checkout/`, a path `readFileSync` cannot open. These tests pin the
  * decode by loading `build/shared.mjs` from a copy placed in such a directory.
  *
- * @module dsh-team-model-routing/build/tooling.test
+ * @module dsh-subagent-model-briefs/build/tooling.test
  */
 
 import assert from 'node:assert/strict'

@@ -7,7 +7,7 @@
  * wrapper with a tsdown `banner` and `footer`; this project reproduces the same
  * wrapper with esbuild so it builds without the repository.
  *
- * @module dsh-team-model-routing/build/shared
+ * @module dsh-subagent-model-briefs/build/shared
  */
 
 import { readFileSync } from 'node:fs'

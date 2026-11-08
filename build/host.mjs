@@ -12,7 +12,7 @@
  * inline map. The package therefore declares no `types` entry: publishing one
  * would name a file this build never writes.
  *
- * @module dsh-team-model-routing/build/host
+ * @module dsh-subagent-model-briefs/build/host
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises'

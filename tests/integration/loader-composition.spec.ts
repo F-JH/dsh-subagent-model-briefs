@@ -95,7 +95,7 @@ async function boot(respond: (options: GenerateOptions) => StreamChunk[]) {
     ['@deepseek-ai/dsh-subagent-spawn-in-process', spawnPlugin],
     ['@deepseek-ai/dsh-tool-subagent', toolSubagentPlugin],
     ['@deepseek-ai/dsh-tool-subagent/model-selection-settings', selectionSettingsPlugin],
-    ['dsh-team-model-routing', notesPlugin],
+    ['dsh-subagent-model-briefs', notesPlugin],
   ])
   // The Loader calls only `import` on its internal module loader; the test
   // answers it from the map above instead of Node's resolver.

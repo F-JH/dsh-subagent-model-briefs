@@ -1,5 +1,5 @@
 {
-  "name": "dsh-team-model-routing",
+  "name": "dsh-subagent-model-briefs",
   "version": "0.1.0",
   "private": false,
   "type": "module",
@@ -28,7 +28,6 @@
     "lib/**/*.js",
     "cordis.patch.yml",
     "README.md",
-    "README.zh.md",
     "assets/*",
     "LICENSE"
   ],
