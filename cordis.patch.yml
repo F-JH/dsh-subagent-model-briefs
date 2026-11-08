@@ -1,0 +1,7 @@
+# One row. `name` is the bare package specifier, which is what makes the client
+# module system attach this package's `./client` bundle to it; `id` is the
+# Settings namespace the panel addresses. Adding a second row that also mounts
+# this module would register the service twice.
+- insert:
+    - id: team-model-routing-settings
+      name: dsh-team-model-routing

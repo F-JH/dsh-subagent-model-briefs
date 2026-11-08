@@ -1,0 +1,24 @@
+# Build output. `lib/` is NOT committed: this repository is designed to be
+# installed from a git ref, and pnpm's `_prepare` runs `npm install` (dev
+# dependencies included) followed by `prepare` inside the resolved checkout, so
+# the host compiles `lib/` itself. Committing build output would instead put a
+# file nobody reviews in front of every install, and it would drift from `src/`
+# the moment a commit forgot to rebuild. See README "Install from GitHub".
+lib/
+
+# Dependencies. `package-lock.json` is committed so an install resolves the
+# exact graph this release was built and tested against; `npm ci` reproduces it.
+node_modules/
+
+# Packed tarballs from `npm pack`.
+*.tgz
+
+# Editor and OS residue.
+.DS_Store
+.idea/
+.vscode/
+*.tsbuildinfo
+*.log
+
+# Local DSH data directories a test run may create (`HOME`, `DSH_HOME`).
+.dsh-home/

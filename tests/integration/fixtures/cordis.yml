@@ -1,0 +1,56 @@
+# Test-only composition: the official subagent stack with model selection,
+# its Host-owned authorization, and this plugin's Loader row. `{{root}}` is
+# replaced with the spec's temporary storage directory.
+- name: '@deepseek-ai/dsh-llm'
+- name: '@deepseek-ai/dsh-session'
+- name: '@deepseek-ai/dsh-session-projection'
+- name: '@deepseek-ai/dsh-session-persistence-jsonl'
+  config:
+    root: '{{root}}'
+- name: '@deepseek-ai/dsh-system-prompt'
+  config:
+    personaPrefix: ''
+    personaSuffix: ''
+- name: '@deepseek-ai/dsh-fs-local'
+- name: '@deepseek-ai/dsh-working-directory'
+- name: '@deepseek-ai/dsh-tools'
+- name: '@deepseek-ai/dsh-tool-executor-native'
+- name: '@deepseek-ai/dsh-agent'
+- name: '@deepseek-ai/dsh-agent-loop'
+  config:
+    agents: []
+- name: '@deepseek-ai/dsh-subagent'
+- name: '@deepseek-ai/dsh-subagent-spawn-in-process'
+  config:
+    providerName: spawn
+- id: tool-subagent
+  name: '@deepseek-ai/dsh-tool-subagent'
+  config:
+    provider: spawn
+    toolName: subagent
+    modelSelection: true
+    modelDiscovery: true
+# This plugin's row precedes the official authorization row on purpose: its
+# `subagentModelSelection` injection, not row order, must order the two
+# `agent/created` listeners.
+- id: team-model-routing-settings
+  name: dsh-team-model-routing
+  config:
+    modelNotes:
+      - provider: alt
+        model: pro
+        capability: Strong at long multi-file refactors
+        scenario: Large code changes that need careful planning
+      - provider: other
+        model: unlisted
+        capability: Not authorized for this Session
+        scenario: Must never reach the model
+- id: subagent-model-selection-settings
+  name: '@deepseek-ai/dsh-tool-subagent/model-selection-settings'
+  config:
+    enabled: true
+    allowedModels:
+      - provider: alt
+        model: pro
+      - provider: alt
+        model: lite

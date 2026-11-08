@@ -1,0 +1,97 @@
+/* Subagent model notes: the section heading, one bordered group per authorized model, and its two text fields. */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.heading {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-primary);
+}
+
+.hint,
+.conflict {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+/* The secondary alias keeps 12px copy above 4.5:1 in both themes; the
+   tertiary alias measures about 3.7:1 on the light canvas. */
+.hint {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.conflict {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.notes,
+.noteGroup,
+.noteField {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.notes {
+  gap: 10px;
+}
+
+.noteGroup {
+  margin: 0;
+  padding: 10px;
+  border: 0.5px solid var(--dsw-alias-border-l4);
+  border-radius: var(--dsw-radius-lg);
+}
+
+.legend {
+  padding: 0 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
+  overflow-wrap: anywhere;
+}
+
+.noteField {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px;
+  resize: vertical;
+  font: inherit;
+  font-size: 13px;
+  color: var(--dsw-alias-label-primary);
+  background: transparent;
+  border: 0.5px solid var(--dsw-alias-border-l4);
+  border-radius: var(--dsw-radius-sm);
+}
+
+.textarea:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
+}
+
+.textarea:disabled {
+  opacity: 0.6;
+}
