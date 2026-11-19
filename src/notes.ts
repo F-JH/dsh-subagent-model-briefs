@@ -1,11 +1,11 @@
 /**
  * Durable subagent model notes: the settings schema, the Session record, and
- * the projection that restores both the record and the official authorization
- * it was filtered by.
+ * the projection that restores the record.
  *
  * A note is descriptive data the user writes for one exact provider/model
- * route. A new Session records, once, the notes of the routes its official
- * subagent model authorization (`subagent/model-selection-policy`) allows. The
+ * route. A new Session records, once, the notes of the routes the current
+ * subagent model selection setting authorizes; the setting is read live, so the
+ * snapshot reflects what the setting allowed when that Session was created. The
  * record is an ignorable plugin record, so a Session log stays readable after
  * this plugin is removed, and a Session without the record shows no notes.
  *
@@ -48,9 +48,6 @@ declare module '@deepseek-ai/dsh-session/types' {
 /** Plugin record type holding one Session's note snapshot. */
 export const MODEL_NOTES_RECORD = 'plugin:team-model-routing/subagent-model-notes'
 
-/** Official Session event recording the routes a Session may select for a child. */
-const OFFICIAL_POLICY_EVENT = 'subagent/model-selection-policy'
-
 /** Host settings: notes keyed by exact route, including routes not currently authorized. */
 export interface ModelNotesConfig {
   /** Saved notes; a route keeps its note while it is not authorized. */
@@ -67,7 +64,6 @@ export const MODEL_NOTES_SCHEMA = z.object({
   })).default([]).volatile(),
 })
 
-const routeSchema = zod.object({ provider: zod.string().min(1), model: zod.string().min(1) }).strict()
 const noteSchema = zod.object({
   provider: zod.string().min(1),
   model: zod.string().min(1),
@@ -76,8 +72,6 @@ const noteSchema = zod.object({
 }).strict()
 
 const stateSchema = zod.object({
-  /** Routes of the first official authorization event; null before one is seen. */
-  policy: zod.array(routeSchema).nullable(),
   notes: zod.discriminatedUnion('kind', [
     zod.object({ kind: zod.literal('unrecorded') }).strict(),
     zod.object({ kind: zod.literal('recorded'), models: zod.array(noteSchema) }).strict(),
@@ -85,7 +79,7 @@ const stateSchema = zod.object({
   ]),
 }).strict()
 
-/** Folded Session state: the official authorization and this plugin's note snapshot. */
+/** Folded Session state: this plugin's note snapshot. */
 export type ModelNotesState = zod.infer<typeof stateSchema>
 
 /**
@@ -120,7 +114,7 @@ export function parseModelNotes(value: unknown): ModelNote[] {
  * Every authorized route gets one entry in authorization order, with empty
  * fields when the user wrote no note for it. A route without authorization is
  * never recorded, and nothing is recorded when no authorized route has a note.
- * @param routes - routes the Session's official authorization allows.
+ * @param routes - routes the subagent model selection setting authorizes.
  * @param notes - the configured notes.
  * @returns the snapshot, or undefined when it would carry no note text.
  */
@@ -149,13 +143,6 @@ export function hasNoteText(note: ModelNote): boolean {
  * @returns the next state, or the same reference for an unrelated event.
  */
 export function foldModelNotes(state: ModelNotesState, event: SessionEvent): ModelNotesState {
-  const type: string = event.type
-  if (type === OFFICIAL_POLICY_EVENT) {
-    if (state.policy !== null) return state
-    const parsed = zod.object({ allowedModels: zod.array(routeSchema) }).safeParse(event.data)
-    // The official projection rejects a malformed policy; here it authorizes nothing.
-    return { ...state, policy: parsed.success ? parsed.data.allowedModels : [] }
-  }
   if (state.notes.kind !== 'unrecorded') return state
   const record = pluginRecordOf(event)
   if (record?.type !== MODEL_NOTES_RECORD) return state
@@ -171,9 +158,10 @@ export function foldModelNotes(state: ModelNotesState, event: SessionEvent): Mod
 /** Host-only projection unit owned by this plugin. */
 export const modelNotesProjection = {
   key: 'teamModelRoutingNotes',
-  stateVersion: 4,
+  // The state no longer carries an authorization copied from the Session log.
+  stateVersion: 5,
   stateSchema,
-  init: (): ModelNotesState => ({ policy: null, notes: { kind: 'unrecorded' } }),
+  init: (): ModelNotesState => ({ notes: { kind: 'unrecorded' } }),
   apply: foldModelNotes,
 } satisfies ProjectionDefinition<'teamModelRoutingNotes', ModelNotesState>
 

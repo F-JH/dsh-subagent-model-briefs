@@ -79,7 +79,7 @@ function materialize() {
 test('manifest declares what the Loader and client scan read', () => {
   assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml')
   assert.equal(manifest.dsh.client.platform, 'web')
-  assert.equal(manifest.engines.dsh, '>=0.2.2-alpha.3 <0.3.0-0')
+  assert.equal(manifest.engines.dsh, '>=0.2.2-rc.3 <0.3.0-0')
   // engines.dsh decides compatibility alone, so the peers stay on the exact
   // version they were verified at instead of restating the range.
   assert.equal(manifest.peerDependencies['@deepseek-ai/dsh-tool-subagent'], '0.2.2-alpha.3')

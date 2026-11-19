@@ -14,7 +14,7 @@
   "license": "MIT",
   "engines": {
     "node": ">=24.9.0",
-    "dsh": ">=0.2.2-alpha.3 <0.3.0-0"
+    "dsh": ">=0.2.2-rc.3 <0.3.0-0"
   },
   "main": "lib/index.js",
   "exports": {

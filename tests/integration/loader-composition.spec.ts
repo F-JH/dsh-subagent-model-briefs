@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
-import { Context } from '@deepseek-ai/cordis'
+import { Context, Service } from '@deepseek-ai/cordis'
 import Loader from '@deepseek-ai/cordis-plugin-loader'
 import Include from '@deepseek-ai/cordis-plugin-include'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -29,7 +29,10 @@ import { Session, SessionId, pluginRecordOf } from '@deepseek-ai/dsh-session'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import * as jsonlPlugin from '@deepseek-ai/dsh-session-persistence-jsonl'
 import * as projectionPlugin from '@deepseek-ai/dsh-session-projection'
+import * as teamPlugin from '@deepseek-ai/dsh-agent-team'
 import * as subagentPlugin from '@deepseek-ai/dsh-subagent'
+import SubagentModelSelectionConfig from '@deepseek-ai/dsh-tool-subagent/model-selection-settings'
+import { mountAgentLoopTestDependencies } from '@deepseek-ai/dsh-agent-loop-testkit'
 import * as spawnPlugin from '@deepseek-ai/dsh-subagent-spawn-in-process'
 import * as systemPromptPlugin from '@deepseek-ai/dsh-system-prompt'
 import * as toolExecutorPlugin from '@deepseek-ai/dsh-tool-executor-native'
@@ -39,9 +42,14 @@ import * as toolsPlugin from '@deepseek-ai/dsh-tools'
 import * as workingDirectoryPlugin from '@deepseek-ai/dsh-working-directory'
 import { MockAdapter, textResponse, toolCallResponse } from '../../../../packages/core/agent-loop/tests/mock-adapter.ts'
 import * as notesPlugin from '../../src/index.ts'
+import { VERIFIED_DSH_RANGE } from '../../src/index.ts'
 import { MODEL_NOTES_RECORD } from '../../src/notes.ts'
+import { TEAM_LEAD_GUIDANCE } from '../../src/team-lead.ts'
 
 const FIXTURE = new URL('./fixtures/cordis.yml', import.meta.url)
+
+/** Opening line of every runtime-context snapshot; the newest one supersedes the rest. */
+const CURRENT_CONTEXT_HEADER = 'The following information describes your current session'
 
 /** The exact runtime-context text a Session created by the fixture composition receives. */
 const NOTES_TEXT = [
@@ -93,6 +101,7 @@ async function boot(respond: (options: GenerateOptions) => StreamChunk[]) {
     ['@deepseek-ai/dsh-agent-loop', agentLoopPlugin],
     ['@deepseek-ai/dsh-subagent', subagentPlugin],
     ['@deepseek-ai/dsh-subagent-spawn-in-process', spawnPlugin],
+    ['@deepseek-ai/dsh-agent-team', teamPlugin],
     ['@deepseek-ai/dsh-tool-subagent', toolSubagentPlugin],
     ['@deepseek-ai/dsh-tool-subagent/model-selection-settings', selectionSettingsPlugin],
     ['dsh-subagent-model-briefs', notesPlugin],
@@ -222,5 +231,68 @@ describe('subagent model notes in a real Loader composition', () => {
     expect(request).toBeDefined()
     expect(requestTexts(request).join('\n')).not.toContain('Notes on the models you may select')
     expect(noteRecords(agent.session.snapshotEvents())).toEqual([])
+  })
+
+  it('shows the Team Lead guidance only while the Agent Teams switch is on', async () => {
+    const { ctx, adapter } = await boot(() => textResponse('done'))
+    const agent = await ctx.agentLoop.create(SessionId('team-lead'), { provider: 'mock', model: 'mock' })
+    /** The runtime-context snapshot the latest request carries; earlier snapshots stay in history. */
+    const currentContext = (): string => {
+      const request = adapter.requests.filter(candidate => candidate.sessionId === agent.id).at(-1)
+      const snapshots = requestTexts(request).filter(text => text.includes(CURRENT_CONTEXT_HEADER))
+      // The snapshot is durable request context recorded in the Session log, not a live-only assembly detail.
+      expect(snapshots.length).toBeGreaterThan(0)
+      return snapshots.at(-1) ?? ''
+    }
+
+    await send(agent, 'before the switch')
+    expect(currentContext()).not.toContain(TEAM_LEAD_GUIDANCE)
+
+    await ctx.agentTeams.setEnabled(agent, true)
+    await send(agent, 'after the switch')
+    expect(currentContext()).toContain(TEAM_LEAD_GUIDANCE)
+
+    await ctx.agentTeams.setEnabled(agent, false)
+    await send(agent, 'after turning it off')
+    expect(currentContext()).not.toContain(TEAM_LEAD_GUIDANCE)
+  })
+})
+
+describe('a DSH release that changes the selection interface', () => {
+  it('fails plugin activation loudly instead of silently recording no notes', async () => {
+    // The service is mounted, but it no longer offers the operation this plugin reads.
+    class RenamedSelection extends Service {
+      constructor(ctx: Context) { super(ctx, 'subagentModelSelection' as never) }
+    }
+    const ctx = new Context()
+    try {
+      await mountAgentLoopTestDependencies(ctx)
+      await ctx.plugin(RenamedSelection as never)
+      // Awaiting the activation is what surfaces the rejection; the fiber's own
+      // Context proxy is only traversed by a pretty-printer, so read the message.
+      const fiber = ctx.plugin(notesPlugin, { modelNotes: [{ provider: 'alt', model: 'pro', capability: 'c', scenario: 's' }] })
+      let failure: Error | undefined
+      try {
+        await fiber
+      } catch (error: unknown) {
+        failure = error instanceof Error ? error : new Error(String(error))
+      }
+      expect(failure?.message).toMatch(/no longer offers allowedRoutes/)
+      // The failure names the verified range, so the report points at the DSH release.
+      expect(failure?.message).toContain(VERIFIED_DSH_RANGE)
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
+  it('activates normally against the interface it was verified with', async () => {
+    const ctx = new Context()
+    try {
+      await mountAgentLoopTestDependencies(ctx)
+      await ctx.plugin(SubagentModelSelectionConfig, { enabled: true, allowedModels: [{ provider: 'alt', model: 'pro' }] })
+      await expect(ctx.plugin(notesPlugin, { modelNotes: [] })).resolves.toBeDefined()
+    } finally {
+      await ctx.fiber.dispose()
+    }
   })
 })

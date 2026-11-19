@@ -30,10 +30,9 @@ function fold(events: readonly SessionEvent[]): ModelNotesState {
   return events.reduce(foldModelNotes, modelNotesProjection.init())
 }
 
-/** A detached Session with the official policy event and the given note record data. */
-function sessionWith(policy: readonly { provider: string; model: string }[] | undefined, record?: unknown): Session {
+/** A detached Session carrying the given note record data. */
+function sessionWith(record?: unknown): Session {
   const session = Session.create(SessionId('notes-fold'))
-  if (policy !== undefined) session.append('subagent/model-selection-policy', { allowedModels: [...policy] })
   if (record !== undefined) appendPluginRecord(session, MODEL_NOTES_RECORD, record as never)
   return session
 }
@@ -65,11 +64,10 @@ describe('parseModelNotes and the settings schema', () => {
 })
 
 describe('foldModelNotes', () => {
-  it('restores the first official policy and the first note record', () => {
-    const session = sessionWith([PRO], { models: [PRO_NOTE] })
-    session.append('subagent/model-selection-policy', { allowedModels: [LITE] })
+  it('restores the first note record', () => {
+    const session = sessionWith({ models: [PRO_NOTE] })
     appendPluginRecord(session, MODEL_NOTES_RECORD, { models: [] })
-    expect(fold(session.snapshotEvents())).toEqual({ policy: [PRO], notes: { kind: 'recorded', models: [PRO_NOTE] } })
+    expect(fold(session.snapshotEvents())).toEqual({ notes: { kind: 'recorded', models: [PRO_NOTE] } })
   })
 
   it('keeps the state reference for unrelated events', () => {
@@ -82,7 +80,7 @@ describe('foldModelNotes', () => {
   })
 
   it('leaves a Session without a record unrecorded', () => {
-    const session = sessionWith([PRO])
+    const session = sessionWith()
     const state = fold(session.snapshotEvents())
     expect(state.notes).toEqual({ kind: 'unrecorded' })
     expect(recordedModelNotes({ stateOf: () => state }, session)).toBeUndefined()
@@ -93,17 +91,11 @@ describe('foldModelNotes', () => {
     ['a malformed note', { models: [{ provider: 'alt' }] }],
     ['a repeated route', { models: [PRO_NOTE, PRO_NOTE] }],
   ])('folds %s to a serializable invalid state reported only by the reader', (_label, data) => {
-    const session = sessionWith([PRO], data)
+    const session = sessionWith(data)
     const state = fold(session.snapshotEvents())
     expect(state.notes).toEqual({ kind: 'invalid' })
     expect(modelNotesProjection.stateSchema.parse(JSON.parse(JSON.stringify(state)))).toEqual(state)
     expect(() => recordedModelNotes({ stateOf: () => state }, session)).toThrow('invalid subagent model notes record')
-  })
-
-  it('treats a malformed official policy as authorizing nothing', () => {
-    const session = Session.create(SessionId('bad-policy'))
-    session.append('subagent/model-selection-policy', { allowedModels: [{ provider: '' }] } as never)
-    expect(fold(session.snapshotEvents()).policy).toEqual([])
   })
 })
 
@@ -114,7 +106,7 @@ describe('notes projection recovery', () => {
       await ctx.plugin(SessionProjectionRegistry)
       const registry = ctx.sessionProjections
       await registry.register(modelNotesProjection)
-      const session = sessionWith([PRO, LITE])
+      const session = sessionWith()
       const events = [...session.snapshotEvents()]
       appendPluginRecord(session, MODEL_NOTES_RECORD, { models: [PRO_NOTE] })
       const suffix = session.snapshotEvents().slice(events.length)
@@ -124,7 +116,7 @@ describe('notes projection recovery', () => {
       const resumed = registry.restore(prefix.checkpoint, suffix, SessionLogOffset(events.length), session.header, SessionLogOffset(0))
       expect(resumed.checkpoint[modelNotesProjection.key]?.val).toEqual(full.checkpoint[modelNotesProjection.key]?.val)
       expect(full.checkpoint[modelNotesProjection.key]?.val)
-        .toEqual({ policy: [PRO, LITE], notes: { kind: 'recorded', models: [PRO_NOTE] } })
+        .toEqual({ notes: { kind: 'recorded', models: [PRO_NOTE] } })
     } finally {
       await ctx.fiber.dispose()
     }
@@ -137,9 +129,9 @@ describe('notes projection recovery', () => {
       const registry = ctx.sessionProjections
       await registry.register(modelNotesProjection)
       await registry.register(eventCountProjection)
-      const session = sessionWith([PRO], { models: 'damaged' })
+      const session = sessionWith({ models: 'damaged' })
       const restored = registry.restore({}, session.snapshotEvents(), SessionLogOffset(0), session.header, SessionLogOffset(0))
-      expect(restored.checkpoint[modelNotesProjection.key]?.val).toEqual({ policy: [PRO], notes: { kind: 'invalid' } })
+      expect(restored.checkpoint[modelNotesProjection.key]?.val).toEqual({ notes: { kind: 'invalid' } })
       expect(restored.checkpoint[eventCountProjection.key]?.val).toBe(session.snapshotEvents().length)
     } finally {
       await ctx.fiber.dispose()

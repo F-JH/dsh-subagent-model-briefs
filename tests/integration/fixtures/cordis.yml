@@ -23,6 +23,9 @@
 - name: '@deepseek-ai/dsh-subagent-spawn-in-process'
   config:
     providerName: spawn
+# Agent Teams: the shared board and the per-tree switch this plugin's Team Lead
+# guidance reads. The fixture turns it on for the Lead Session itself.
+- name: '@deepseek-ai/dsh-agent-team'
 - id: tool-subagent
   name: '@deepseek-ai/dsh-tool-subagent'
   config:
@@ -30,9 +33,8 @@
     toolName: subagent
     modelSelection: true
     modelDiscovery: true
-# This plugin's row precedes the official authorization row on purpose: its
-# `subagentModelSelection` injection, not row order, must order the two
-# `agent/created` listeners.
+# This plugin's row precedes the official setting row on purpose: the snapshot
+# must read the setting's live value, which row order does not affect.
 - id: team-model-routing-settings
   name: dsh-subagent-model-briefs
   config:
