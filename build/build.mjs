@@ -6,11 +6,10 @@
  * `lib/index.js` (Host plugin) and `lib/client.js` (browser lazy-CJS factory) —
  * then runs {@link verifyArtifacts} against what the runtime reads.
  *
- * `prepare` calls this entry point, which is what makes a GitHub install
- * produce a loadable package. pnpm refuses a git dependency's lifecycle scripts
- * until the installing user allowlists it, so that install announces itself as
- * an approval request rather than running silently; the README's install
- * section owns the exact commands and the permission the approval grants.
+ * Run this before committing a source change: `lib/` is committed so a git
+ * install needs no lifecycle script, and `npm test` fails when the committed
+ * artifacts no longer match `src/`. `prepack` calls this entry point too, so a
+ * published tarball is always built from the sources it ships with.
  *
  * @module dsh-subagent-model-briefs/build/build
  */

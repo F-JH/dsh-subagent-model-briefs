@@ -119,6 +119,27 @@ test('every declared export resolves to an emitted file', async () => {
   assert.ok((await verifyArtifacts(id)).length > 0)
 })
 
+test('the committed lib/ matches the sources it was built from', () => {
+  // lib/ is committed, so nothing rebuilds it during an install. Without this
+  // check a source change could ship an artifact built from different code and
+  // every other assertion here would still pass against the stale bundle.
+  for (const artifact of ['lib/index.js', 'lib/client.js']) {
+    const text = readFileSync(new URL(artifact, root), 'utf8')
+    // Rebuilding from these sources is deterministic, so an embedded source map
+    // is a faithful record of what the bundle was compiled from.
+    const encoded = /sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/.exec(text)?.[1]
+    assert.ok(encoded !== undefined, `${artifact} carries an inline source map`)
+    const map = JSON.parse(Buffer.from(encoded, 'base64').toString())
+    assert.ok(Array.isArray(map.sourcesContent), `${artifact} embeds its sources`)
+    for (const [index, source] of map.sources.entries()) {
+      if (source.startsWith('dsh-css-module:')) continue
+      const embedded = map.sourcesContent[index]
+      const actual = readFileSync(new URL(source, root), 'utf8')
+      assert.equal(embedded, actual, `${artifact} was built from the current ${source}; run npm run build`)
+    }
+  }
+})
+
 test('the browser bundle registers a lazy-CJS factory under the package name', () => {
   const source = clientSource()
   assert.ok(source.startsWith('window.__ModuleLoader__.load({'), 'the script registers before it does anything else')

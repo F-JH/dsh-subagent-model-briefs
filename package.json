@@ -101,7 +101,6 @@
   },
   "scripts": {
     "build": "node build/build.mjs",
-    "prepare": "node build/build.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node --test build/artifacts.test.mjs build/tooling.test.mjs build/client-style.test.mjs",
     "test:unit": "vitest run",

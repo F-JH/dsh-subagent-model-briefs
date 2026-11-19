@@ -47,9 +47,9 @@ DSH 允许你在子代理设置里授权一组 `provider/model`，主智能体�
 dsh plugin --profile web add github:F-JH/dsh-subagent-model-briefs
 ```
 
-首次安装时 pnpm 会拒绝执行构建脚本，并打印一个 `allowBuilds` 键。把它复制到 profile 的 `pnpm-workspace.yaml` 里再执行一次即可。
+`lib/` 随仓库提交，所以安装时没有构建脚本，pnpm 也不会要求你授权任何东西。
 
-本地目录安装（需要先构建出 `lib/`）：
+本地目录安装：
 
 ```sh
 cd dsh-subagent-model-briefs && npm install && npm run build

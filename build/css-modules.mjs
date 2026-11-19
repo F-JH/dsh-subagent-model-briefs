@@ -133,16 +133,24 @@ export function cssModules({ root, stylesheets }) {
         const inline = args.path.endsWith(INLINE_SUFFIX)
         const specifier = inline ? args.path.slice(0, -'?inline'.length) : args.path
         const file = resolve(args.resolveDir, specifier)
-        return { path: file, namespace: inline ? 'dsh-css-inline' : 'dsh-css-module' }
+        // esbuild copies the resolve result into the bundle's source map, so a
+        // committed artifact would carry the absolute path of the machine that
+        // built it. The map gets a project-relative path, and the absolute one
+        // rides in `pluginData` for onLoad to read the stylesheet from.
+        const portable = relative(root, file).split('\\').join('/')
+        return { path: portable, namespace: inline ? 'dsh-css-inline' : 'dsh-css-module', pluginData: { file } }
       })
 
       for (const [namespace, inline] of [['dsh-css-module', false], ['dsh-css-inline', true]]) {
-        build.onLoad({ filter: /.*/, namespace }, async (args) => ({
-          contents: await moduleSource(args.path, inline),
-          // The stylesheet rides in the bundle, so its text is already shipped.
-          loader: 'js',
-          resolveDir: dirname(args.path),
-        }))
+        build.onLoad({ filter: /.*/, namespace }, async (args) => {
+          const file = args.pluginData.file
+          return {
+            contents: await moduleSource(file, inline),
+            // The stylesheet rides in the bundle, so its text is already shipped.
+            loader: 'js',
+            resolveDir: dirname(file),
+          }
+        })
       }
     },
   }
