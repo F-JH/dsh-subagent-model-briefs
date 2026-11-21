@@ -35,16 +35,19 @@ function RouteGlyph() {
 
 /**
  * Render the Session's model route: full text when the composer row has room,
- * otherwise a chip that opens the same text upward on click or tap.
- * @param props - the Session's projection reader and this plugin's copy.
- * @returns the route label, or null before the Session records a route.
+ * otherwise a chip that opens the same text upward on click or tap. Only a
+ * subagent Session shows it; a root Session keeps its unmodified composer,
+ * because the model selector beside it already names that Session's route.
+ * @param props - the Session's lifecycle and projection readers, and copy.
+ * @returns the route label, or null for a root Session or before any route is recorded.
  */
-export function ModelRouteBadge({ useProjection, t }: ModelRouteBadgeProps) {
+export function ModelRouteBadge({ useSession, useProjection, t }: ModelRouteBadgeProps) {
+  const subagent = useSession(snapshot => snapshot.subagent)
   // The installed SlotMap carries no projection table; the reader returns this
   // one key's value, which the label narrows itself.
   const read = useProjection as unknown as ReadModelSelection
   const label = modelLabelOf(read('modelSelection'))
-  if (label === undefined) return null
+  if (subagent === null || label === undefined) return null
   const accessible = t('routeAria', { route: label.route })
   return (
     <Tooltip

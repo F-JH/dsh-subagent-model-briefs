@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-/** The composer's model-route label: projection mapping, rendering, and the compact chip. */
+/** The composer's model-route label: subagent-only scope, projection mapping, and the compact chip. */
 
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -15,10 +15,18 @@ const t = (key: keyof typeof en, params?: Record<string, string>) =>
 
 const ROUTE = { provider: 'proxy', model: 'codex-gpt-6.2-sol' }
 
-/** Bind a projection reader returning `view`, as the renderer does for one Session. */
-function renderBadge(view: ModelSelectionView | undefined) {
+/** A subagent Session's snapshot as far as this label reads it. */
+const SUBAGENT = { subagent: { address: { parentSessionId: 'root', childSessionId: 'child', mode: 'continuable' } } }
+
+/**
+ * Bind the two readers the renderer supplies for one Session.
+ * @param view - the Session's `modelSelection` value.
+ * @param subagent - the Session's `subagent` snapshot member; null for a root Session.
+ */
+function renderBadge(view: ModelSelectionView | undefined, subagent: unknown = SUBAGENT) {
   const useProjection = () => view
-  const props = { useProjection, t } as unknown as ModelRouteBadgeProps
+  const useSession = (selector: (snapshot: { subagent: unknown }) => unknown) => selector({ subagent })
+  const props = { useSession, useProjection, t } as unknown as ModelRouteBadgeProps
   return render(<ModelRouteBadge {...props} />)
 }
 
@@ -46,12 +54,17 @@ describe('modelLabelOf', () => {
 })
 
 describe('ModelRouteBadge', () => {
+  it('renders nothing for a root Session, whose model selector already names the route', () => {
+    const { container } = renderBadge({ lastUsed: ROUTE, next: ROUTE }, null)
+    expect(container.innerHTML).toBe('')
+  })
+
   it('renders nothing before a route is recorded', () => {
     const { container } = renderBadge(undefined)
     expect(container.innerHTML).toBe('')
   })
 
-  it('shows the complete route as text with an accessible name naming it', () => {
+  it('shows the complete route in a subagent Session with an accessible name naming it', () => {
     renderBadge({ lastUsed: ROUTE, next: ROUTE })
     expect(screen.getByText('proxy/codex-gpt-6.2-sol')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Current model: proxy/codex-gpt-6.2-sol' })).toBeTruthy()
