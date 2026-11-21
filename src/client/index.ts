@@ -22,6 +22,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import { ModelNotesRefreshAction } from './ModelNotesRefreshAction.tsx'
+import { ModelRouteBadge } from './ModelRouteBadge.tsx'
 import { ModelNotesSection } from './ModelNotesSection.tsx'
 import {
   MODEL_NOTES_ENTRY_ID, ModelNotesController, SUBAGENT_MODEL_SELECTION_ENTRY_ID,
@@ -32,6 +33,7 @@ import type { SessionId } from './refresh-controller.ts'
 import { en, zh, type ModelNotesLocaleKey } from './locales.ts'
 
 export type { ModelNotesRefreshActionProps } from './ModelNotesRefreshAction.tsx'
+export type { ModelRouteBadgeProps } from './ModelRouteBadge.tsx'
 export type { ModelNotesSectionProps } from './ModelNotesSection.tsx'
 export type {
   ModelNote, ModelNoteRow, ModelNotesFace, ModelNotesSettings, ModelNotesState, ModelRoute,
@@ -89,4 +91,14 @@ export function apply(ctx: ClientContext): void {
     locale: NS,
     inject: () => ({ refresh: (id: SessionId) => refresh.refresh(id) }),
   }, ModelNotesRefreshAction)), 'dsh-subagent-model-briefs: session refresh')
+
+  // The composer's model route. The renderer hands each session-scoped entry a
+  // `useProjection` reader, so the label follows the Session's own
+  // `modelSelection` projection without reaching for the sessions service.
+  ctx.effect(() => ctx.slots.inject('conversation.input.right', () => ctx.slots.register({
+    name: 'conversation.input.right',
+    id: 'team-model-routing-route',
+    order: -10,
+    locale: NS,
+  }, ModelRouteBadge)), 'dsh-subagent-model-briefs: composer model route')
 }

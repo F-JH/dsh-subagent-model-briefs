@@ -1,0 +1,61 @@
+/* The route chip sits in the composer's trailing group, before the model
+   trigger. It keeps the trigger's own metrics so the row's height matches. */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 22ch;
+  height: 28px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 16px;
+  cursor: pointer;
+}
+
+.trigger:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 1px;
+}
+
+.glyph {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+
+/* The full route: one line, clipped rather than wrapped so the row height holds. */
+.text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* DSH marks the composer row when its expanded controls cannot share a line;
+   the label then collapses to its glyph and the bubble carries the text. */
+:global([data-model-compact]) .trigger {
+  width: 28px;
+  max-width: none;
+  padding: 0;
+  justify-content: center;
+}
+
+:global([data-model-compact]) .text {
+  display: none;
+}
+
+/* A narrow card rewards the smaller gap the row itself adopts. */
+@container (max-width: 560px) {
+  .trigger {
+    max-width: 16ch;
+  }
+}

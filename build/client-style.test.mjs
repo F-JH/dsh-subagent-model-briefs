@@ -329,11 +329,14 @@ test('every class the rendered panel applies is declared by the injected stylesh
     const unmatched = [...applied].filter(name => !classes.has(name))
     assert.deepEqual(unmatched, [], 'every applied className has a matching selector in the injected stylesheet')
 
-    // The header refresh action is registered alongside the panel but rendered
-    // by the Conversation shell, not the Plugins page this test renders. Its
-    // class is declared and used in production; exclude it from this panel's
-    // one-sided coverage check.
-    const unused = [...classes].filter(name => !applied.has(name) && !name.startsWith('trigger_'))
+    // The header refresh action and the composer model-route label are
+    // registered alongside the panel but rendered by the Conversation shell,
+    // not the Plugins page this test renders. Their classes are declared and
+    // used in production; exclude them from this panel's one-sided coverage
+    // check. `trigger`/`glyph`/`text` are the distinct scoped names of those
+    // two components.
+    const shellOwned = name => /^(trigger|glyph|text)_/.test(name)
+    const unused = [...classes].filter(name => !applied.has(name) && !shellOwned(name))
     assert.deepEqual(unused, [], 'every declared panel selector is applied by the rendered panel')
 
     root.unmount()

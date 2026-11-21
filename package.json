@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": false,
   "type": "module",
-  "description": "Subagent model notes: capability and scenario descriptions for the models the official subagent model selection allows, shown to agents that choose a subagent model.",
+  "description": "Subagent model notes: capability and scenario descriptions for the models the official subagent model selection allows, shown to agents that choose a subagent model, plus the current provider/model route beside the composer.",
   "keywords": [
     "dsh",
     "deepseek-harness",

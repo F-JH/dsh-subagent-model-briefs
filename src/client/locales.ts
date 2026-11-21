@@ -11,6 +11,7 @@ export type ModelNotesLocaleKey =
   | 'sectionTitle' | 'sectionHint' | 'capability' | 'scenario'
   | 'selectionUnavailable' | 'selectionEmpty' | 'conflict'
   | 'refreshLabel' | 'refreshBusy' | 'refreshUpdated' | 'refreshUnchanged' | 'refreshFailed' | 'refreshInactive'
+  | 'routeAria'
 
 /** English copy. */
 export const en: Record<ModelNotesLocaleKey, string> = {
@@ -32,6 +33,7 @@ export const en: Record<ModelNotesLocaleKey, string> = {
   refreshUnchanged: 'Subagent model notes are already up to date.',
   refreshFailed: 'Could not refresh subagent model notes. Try again.',
   refreshInactive: 'This session is not active yet. Send a message, then refresh again.',
+  routeAria: 'Current model: {route}',
 }
 
 /** Simplified Chinese copy. */
@@ -54,6 +56,7 @@ export const zh: Record<ModelNotesLocaleKey, string> = {
   refreshUnchanged: '子代理模型说明已是最新。',
   refreshFailed: '刷新子代理模型说明失败，请重试。',
   refreshInactive: '当前会话尚未激活，请先发送一条消息再刷新。',
+  routeAria: '当前模型：{route}',
 }
 
 /**
