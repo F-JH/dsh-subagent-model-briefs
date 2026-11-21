@@ -4,7 +4,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import { RefreshController, REFRESH_API_PATH, readRefreshResult } from '../../src/client/refresh-controller.ts'
+import { RefreshController, REFRESH_API_ROUTE, readRefreshResult } from '../../src/client/refresh-controller.ts'
 import { ModelNotesRefreshAction, type ModelNotesRefreshActionProps } from '../../src/client/ModelNotesRefreshAction.tsx'
 import { en } from '../../src/client/locales.ts'
 
@@ -30,7 +30,9 @@ describe('RefreshController', () => {
     expect(result.status).toBe('updated')
     expect(fetcher).toHaveBeenCalledOnce()
     const [path, init] = fetcher.mock.calls[0]!
-    expect(path).toBe(REFRESH_API_PATH)
+    expect(path).toBe(REFRESH_API_ROUTE)
+    // A served document's <base href="./"> must carry the request beneath the mount that served it.
+    expect(path.startsWith('/')).toBe(false)
     expect(init.method).toBe('POST')
     expect(JSON.parse(String(init.body))).toEqual({ sessionId: SID })
   })

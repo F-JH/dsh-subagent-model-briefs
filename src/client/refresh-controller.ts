@@ -7,6 +7,12 @@ export type { SessionId }
 /** Path of the authenticated Host endpoint this controller calls. */
 export const REFRESH_API_PATH = '/api/team-model-routing.refresh'
 
+/**
+ * Browser form of {@link REFRESH_API_PATH}: the served document's `<base href="./">`
+ * resolves it beneath the mount that served the page.
+ */
+export const REFRESH_API_ROUTE = REFRESH_API_PATH.slice(1)
+
 /** What the refresh action currently reports. */
 export type RefreshStatus = 'idle' | 'busy' | 'updated' | 'unchanged' | 'failed' | 'inactive'
 
@@ -63,7 +69,7 @@ export class RefreshController {
   private async send(sessionId: SessionId): Promise<RefreshResult> {
     let response: Response
     try {
-      response = await this.fetcher(REFRESH_API_PATH, {
+      response = await this.fetcher(REFRESH_API_ROUTE, {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'content-type': 'application/json' },
