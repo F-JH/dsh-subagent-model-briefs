@@ -143,7 +143,6 @@ export function hasNoteText(note: ModelNote): boolean {
  * @returns the next state, or the same reference for an unrelated event.
  */
 export function foldModelNotes(state: ModelNotesState, event: SessionEvent): ModelNotesState {
-  if (state.notes.kind !== 'unrecorded') return state
   const record = pluginRecordOf(event)
   if (record?.type !== MODEL_NOTES_RECORD) return state
   try {
@@ -158,8 +157,8 @@ export function foldModelNotes(state: ModelNotesState, event: SessionEvent): Mod
 /** Host-only projection unit owned by this plugin. */
 export const modelNotesProjection = {
   key: 'teamModelRoutingNotes',
-  // The state no longer carries an authorization copied from the Session log.
-  stateVersion: 5,
+  // Last record wins: a per-session refresh appends a newer snapshot.
+  stateVersion: 6,
   stateSchema,
   init: (): ModelNotesState => ({ notes: { kind: 'unrecorded' } }),
   apply: foldModelNotes,

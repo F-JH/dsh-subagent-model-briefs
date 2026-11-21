@@ -21,18 +21,23 @@ import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import { ModelNotesRefreshAction } from './ModelNotesRefreshAction.tsx'
 import { ModelNotesSection } from './ModelNotesSection.tsx'
 import {
   MODEL_NOTES_ENTRY_ID, ModelNotesController, SUBAGENT_MODEL_SELECTION_ENTRY_ID,
 } from './model-notes-controller.ts'
 import type { ModelNotesSettings, SubagentModelSelectionSettings } from './model-notes-controller.ts'
+import { RefreshController } from './refresh-controller.ts'
+import type { SessionId } from './refresh-controller.ts'
 import { en, zh, type ModelNotesLocaleKey } from './locales.ts'
 
+export type { ModelNotesRefreshActionProps } from './ModelNotesRefreshAction.tsx'
 export type { ModelNotesSectionProps } from './ModelNotesSection.tsx'
 export type {
   ModelNote, ModelNoteRow, ModelNotesFace, ModelNotesSettings, ModelNotesState, ModelRoute,
   SubagentModelSelectionSettings,
 } from './model-notes-controller.ts'
+export type { RefreshResult, RefreshStatus } from './refresh-controller.ts'
 export type { ModelNotesLocaleKey } from './locales.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
@@ -75,4 +80,13 @@ export function apply(ctx: ClientContext): void {
       inject: () => notes.inject(),
     }, ModelNotesSection),
   )), 'dsh-subagent-model-briefs: panel')
+
+  const refresh = new RefreshController()
+  ctx.effect(() => ctx.slots.inject('conversation.session.header.utilities', () => ctx.slots.register({
+    name: 'conversation.session.header.utilities',
+    id: 'team-model-routing-refresh',
+    order: -5,
+    locale: NS,
+    inject: () => ({ refresh: (id: SessionId) => refresh.refresh(id) }),
+  }, ModelNotesRefreshAction)), 'dsh-subagent-model-briefs: session refresh')
 }

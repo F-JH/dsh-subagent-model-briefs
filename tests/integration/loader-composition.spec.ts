@@ -43,10 +43,12 @@ import * as workingDirectoryPlugin from '@deepseek-ai/dsh-working-directory'
 import { MockAdapter, textResponse, toolCallResponse } from '../../../../packages/core/agent-loop/tests/mock-adapter.ts'
 import * as notesPlugin from '../../src/index.ts'
 import { VERIFIED_DSH_RANGE } from '../../src/index.ts'
+import type { ModelNotesConfig } from '../../src/notes.ts'
 import { MODEL_NOTES_RECORD } from '../../src/notes.ts'
 import { TEAM_LEAD_GUIDANCE } from '../../src/team-lead.ts'
 
 const FIXTURE = new URL('./fixtures/cordis.yml', import.meta.url)
+const REFRESH_FIXTURE = new URL('./fixtures/cordis-fresh.yml', import.meta.url)
 
 /** Opening line of every runtime-context snapshot; the newest one supersedes the rest. */
 const CURRENT_CONTEXT_HEADER = 'The following information describes your current session'
@@ -78,10 +80,10 @@ afterEach(async () => {
 })
 
 /** Boot the fixture composition through the Loader and register the scripted adapter. */
-async function boot(respond: (options: GenerateOptions) => StreamChunk[]) {
+async function boot(respond: (options: GenerateOptions) => StreamChunk[], fixtureUrl: URL = FIXTURE) {
   root = await mkdtemp(join(tmpdir(), 'dsh-model-notes-loader-'))
   const configPath = join(root, 'cordis.yml')
-  const fixture = await readFile(FIXTURE, 'utf8')
+  const fixture = await readFile(fixtureUrl, 'utf8')
   await writeFile(configPath, fixture.replaceAll('{{root}}', join(root, 'sessions').replaceAll('\\', '/')))
   const ctx = context = new Context()
   ctx.baseUrl = pathToFileURL(root).href + '/'
@@ -104,8 +106,27 @@ async function boot(respond: (options: GenerateOptions) => StreamChunk[]) {
     ['@deepseek-ai/dsh-agent-team', teamPlugin],
     ['@deepseek-ai/dsh-tool-subagent', toolSubagentPlugin],
     ['@deepseek-ai/dsh-tool-subagent/model-selection-settings', selectionSettingsPlugin],
-    ['dsh-subagent-model-briefs', notesPlugin],
+    ['dsh-subagent-model-briefs', {
+      ...notesPlugin,
+      apply: (pluginCtx: Context, pluginConfig: ModelNotesConfig) => {
+        notesConfig = pluginConfig
+        return notesPlugin.apply(pluginCtx, pluginConfig)
+      },
+    }],
   ])
+  // Stand-in for the authenticated Client fetch channel; the Web profile
+  // mounts the real one, this composition only needs the route handler.
+  const refreshRoutes = new Map<string, (request: Request) => Promise<Response>>()
+  const connection = {
+    fetch: {
+      register(route: { path: string; fetch: (request: Request) => Promise<Response> }) {
+        refreshRoutes.set(route.path, route.fetch)
+        return () => { refreshRoutes.delete(route.path); return Promise.resolve() }
+      },
+    },
+  }
+  ctx.provide('connection', connection as never)
+  let notesConfig: ModelNotesConfig | undefined
   // The Loader calls only `import` on its internal module loader; the test
   // answers it from the map above instead of Node's resolver.
   Reflect.set(ctx.loader, 'internal', {
@@ -123,7 +144,7 @@ async function boot(respond: (options: GenerateOptions) => StreamChunk[]) {
     efforts: [{ id: ReasoningEffortId('high'), name: 'High' }, { id: ReasoningEffortId('max'), name: 'Max' }],
   })
   ctx.llm.registerAdapter(['mock', 'alt'], adapter)
-  return { ctx, adapter }
+  return { ctx, adapter, refreshRoutes, notesConfig: () => notesConfig }
 }
 
 /** Every text block of one request's messages. */
@@ -206,6 +227,43 @@ describe('subagent model notes in a real Loader composition', () => {
     await agent.whenIdle()
     await ctx.sessions.flush(agent.session)
     expect(noteRecords(await storedEvents(ctx, lead))).toEqual([{ models: RECORDED_MODELS }])
+  })
+
+  it('refreshes a live Session so the very next user message carries the new notes', async () => {
+    const lead = SessionId('notes-refresh')
+    const { ctx, adapter, refreshRoutes, notesConfig: readNotesConfig } = await boot(() => textResponse('done'), REFRESH_FIXTURE)
+    const agent = await ctx.agentLoop.create(lead, { provider: 'mock', model: 'mock' })
+
+    await send(agent, 'before refresh')
+    const before = adapter.requests.find(request => request.sessionId === lead)
+    const beforeText = requestTexts(before).join('\n')
+    expect(beforeText).not.toContain('New note')
+
+    const originalEvents = [...agent.session.snapshotEvents()]
+    const freshNotes = {
+      modelNotes: [{ provider: 'alt', model: 'fresh', capability: 'New note', scenario: 'After refresh' }],
+    }
+    const config = readNotesConfig()
+    if (config === undefined) throw new Error('missing notes config')
+    const write = Symbol.for('cosmokit.volatile.write')
+    ;(config.modelNotes as unknown as Record<symbol, (value: unknown) => void>)[write](freshNotes.modelNotes)
+
+    const handler = refreshRoutes.get('/api/team-model-routing.refresh')
+    if (handler === undefined) throw new Error('refresh route not registered')
+    const response = await handler(new Request('http://localhost/api/team-model-routing.refresh', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ sessionId: lead }),
+    }))
+    expect(await response.json()).toEqual({ ok: true, changed: true })
+
+    await send(agent, 'after refresh')
+    const after = adapter.requests.filter(request => request.sessionId === lead).at(-1)
+    const afterText = requestTexts(after).join('\n')
+    expect(afterText).toContain('New note')
+    expect(afterText).not.toContain('Old note')
+    // No mutation of earlier history: the first snapshot is byte-for-byte intact.
+    expect(agent.session.snapshotEvents().slice(0, originalEvents.length)).toEqual(originalEvents)
   })
 
   it('shows no notes for a resumed Session that recorded none', async () => {

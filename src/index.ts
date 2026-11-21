@@ -22,6 +22,7 @@ import type { Session } from '@deepseek-ai/dsh-session'
 import type { ProjectionHandle } from '@deepseek-ai/dsh-session-projection'
 import { modelNotesContext } from './discovery.ts'
 import type { ModelNoteLine } from './discovery.ts'
+import { RefreshApi } from './refresh-api.ts'
 import { teamLeadGuidanceContext, teamModeOn } from './team-lead.ts'
 import {
   MODEL_NOTES_RECORD, MODEL_NOTES_SCHEMA, modelNotesProjection, parseModelNotes, recordedModelNotes, routeKey,
@@ -180,6 +181,30 @@ export async function apply(ctx: Context, config: ModelNotesConfig): Promise<voi
     if (models !== undefined) appendPluginRecord(session, MODEL_NOTES_RECORD, { models })
   }
 
+  /** Compute the snapshot the live settings describe now. */
+  const currentSnapshot = (): readonly ModelNote[] | undefined => {
+    const configured = parseModelNotes(config.modelNotes.get().map(note => ({
+      provider: note.provider, model: note.model, capability: note.capability, scenario: note.scenario,
+    })))
+    return snapshotModelNotes(authorizedRoutes(ctx), configured)
+  }
+
+  /** Resolve all efforts first, then commit notes and efforts in one synchronous step. */
+  const refreshSession = async (session: Session, models: readonly ModelNote[]): Promise<void> => {
+    const declared = new Map<string, readonly string[]>()
+    await Promise.all(models.map(async (note) => {
+      try {
+        const ids = (await ctx.llm.resolveModelInfo(note.provider, note.model)).reasoning?.efforts.map(effort => effort.id)
+        if (ids !== undefined) declared.set(routeKey(note), ids)
+      } catch (error: unknown) {
+        ctx.logger.warn(`subagent model notes: reasoning efforts of "${note.provider}/${note.model}" are unavailable: ${String(error)}`)
+      }
+    }))
+    ctx.fiber.assertActive()
+    efforts.set(session, declared)
+    appendPluginRecord(session, MODEL_NOTES_RECORD, { models })
+  }
+
   /**
    * Resolve the declared reasoning efforts of every recorded route before the
    * Agent's first request, because the context text is rendered synchronously.
@@ -236,4 +261,15 @@ export async function apply(ctx: Context, config: ModelNotesConfig): Promise<voi
     order: ctx.systemPrompt.getContextOrder('SUBAGENT_DELEGATION') + 2,
     teamModeOf: agent => teamModeOn(ctx, agent),
   }))
+
+  ctx.inject(['connection'], () => {
+    const connection = ctx.get('connection') as { readonly fetch: ConstructorParameters<typeof RefreshApi>[0] } | undefined
+    if (connection === undefined) return
+    new RefreshApi(connection.fetch, {
+      sessionOf: id => ctx.sessions.get(id),
+      stateOf: session => handle.stateOf(session),
+      snapshot: currentSnapshot,
+      refresh: refreshSession,
+    }).register()
+  })
 }

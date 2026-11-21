@@ -64,10 +64,10 @@ describe('parseModelNotes and the settings schema', () => {
 })
 
 describe('foldModelNotes', () => {
-  it('restores the first note record', () => {
+  it('restores the latest note record', () => {
     const session = sessionWith({ models: [PRO_NOTE] })
     appendPluginRecord(session, MODEL_NOTES_RECORD, { models: [] })
-    expect(fold(session.snapshotEvents())).toEqual({ notes: { kind: 'recorded', models: [PRO_NOTE] } })
+    expect(fold(session.snapshotEvents())).toEqual({ notes: { kind: 'recorded', models: [] } })
   })
 
   it('keeps the state reference for unrelated events', () => {

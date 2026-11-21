@@ -1,0 +1,7 @@
+/* Match the 28px icon-only Session utilities: Button owns radius and hover fill. */
+.trigger {
+  flex: none;
+  width: 28px;
+  padding: 0;
+  color: var(--dsw-alias-label-secondary);
+}

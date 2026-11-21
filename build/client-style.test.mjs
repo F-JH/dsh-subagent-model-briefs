@@ -161,7 +161,15 @@ function stubbedPrimitives(react) {
   function SettingsForm(props) {
     return react.createElement('div', { 'data-stub': 'settings-form' }, props.children)
   }
-  return { SettingsForm }
+  /** The header action is registered but not the component this test renders. */
+  function Stub() { return null }
+  return {
+    SettingsForm,
+    Button: Stub,
+    IconRefreshOutlineRegular: Stub,
+    Toast: Stub,
+    Tooltip: Stub,
+  }
 }
 
 /**
@@ -238,7 +246,10 @@ function registeredSection(exports) {
     slots: {
       inject: (_name, callback) => callback(),
       /** @param slot - the slot declaration; `component` is its last argument. */
-      register: (slot, component) => { registered = component; return slot },
+      register: (slot, component) => {
+        if (slot.name === 'plugins.detail.section') registered = component
+        return slot
+      },
     },
   }
   exports.apply(ctx)
@@ -318,10 +329,12 @@ test('every class the rendered panel applies is declared by the injected stylesh
     const unmatched = [...applied].filter(name => !classes.has(name))
     assert.deepEqual(unmatched, [], 'every applied className has a matching selector in the injected stylesheet')
 
-    // Drift in the other direction is the same defect seen from the CSS side: a
-    // declared class nothing applies means the map and the stylesheet disagree.
-    const unused = [...classes].filter(name => !applied.has(name))
-    assert.deepEqual(unused, [], 'every declared selector is applied by the rendered panel')
+    // The header refresh action is registered alongside the panel but rendered
+    // by the Conversation shell, not the Plugins page this test renders. Its
+    // class is declared and used in production; exclude it from this panel's
+    // one-sided coverage check.
+    const unused = [...classes].filter(name => !applied.has(name) && !name.startsWith('trigger_'))
+    assert.deepEqual(unused, [], 'every declared panel selector is applied by the rendered panel')
 
     root.unmount()
   } finally {
